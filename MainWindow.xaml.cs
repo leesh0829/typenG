@@ -113,13 +113,21 @@ public partial class MainWindow : Window
             return;
         }
 
+        if ((e.Text == " " || e.Text == "\r" || e.Text == "\n") && _engine.CanAdvanceLine())
+        {
+            _compositionText = string.Empty;
+            CommitComposerTail();
+            _ = AdvanceLineAsync();
+            e.Handled = true;
+            return;
+        }
+
         _caretVisible = true;
 
         ProcessIncomingText(e.Text);
         RenderCurrentLine();
         e.Handled = true;
     }
-
 
     private void ProcessIncomingText(string text)
     {

@@ -88,13 +88,16 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (e.Key is Key.Space && _engine.CanAdvanceLine())
+        if (e.Key is Key.Space)
         {
             _compositionText = string.Empty;
             CommitComposerTail();
-            await AdvanceLineAsync();
-            e.Handled = true;
-            return;
+            if (_engine.CanAdvanceLine())
+            {
+                await AdvanceLineAsync();
+                e.Handled = true;
+                return;
+            }
         }
     }
 
@@ -277,7 +280,7 @@ public partial class MainWindow : Window
 
             if (isCaretPosition && _caretVisible)
             {
-                result.Add(new Run("¦") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95), FontWeight = FontWeights.Thin });
+                result.Add(new Run("│") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95), FontWeight = FontWeights.Thin, FontSize = 28 });
             }
 
             result.Add(run);
@@ -285,10 +288,11 @@ public partial class MainWindow : Window
 
         if (caretIndex >= items.Count)
         {
-            result.Add(new Run(_caretVisible ? "¦" : " ")
+            result.Add(new Run(_caretVisible ? "│" : " ")
             {
                 Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9),
-                FontWeight = FontWeights.Thin
+                FontWeight = FontWeights.Thin,
+                FontSize = 28
             });
         }
 
@@ -348,7 +352,7 @@ public partial class MainWindow : Window
             var tcs = new TaskCompletionSource<bool>();
             sb.Completed += (_, _) => tcs.TrySetResult(true);
             sb.Begin();
-            await tcs.Task;
+            await Task.WhenAny(tcs.Task, Task.Delay(280));
 
             ApplyIncomingAsCurrent(incomingInlines);
         }
@@ -418,7 +422,7 @@ public partial class MainWindow : Window
         _isResizeMode = !_isResizeMode;
         ResizeMode = _isResizeMode ? ResizeMode.CanResize : ResizeMode.NoResize;
         ResizeThumb.Visibility = _isResizeMode ? Visibility.Visible : Visibility.Collapsed;
-        ResizeMenuItem.Header = _isResizeMode ? "화면 조정 끝내기" : "화면 조정 시작";
+        ResizeMenuItem.Header = _isResizeMode ? "위치/크기 조정 끝내기" : "위치/크기 조정 시작";
     }
 
     private void ForegroundMenuItem_OnClick(object sender, RoutedEventArgs e)
@@ -462,11 +466,6 @@ public partial class MainWindow : Window
         }
 
         if (FindVisualParent<Thumb>(source) is not null || source is Thumb)
-        {
-            return;
-        }
-
-        if (_isResizeMode)
         {
             return;
         }

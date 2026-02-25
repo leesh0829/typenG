@@ -16,7 +16,7 @@
     <Grid Margin="18" SnapsToDevicePixels="True">
         <Grid.ContextMenu>
             <ContextMenu>
-                <MenuItem x:Name="ResizeMenuItem" Header="화면 조정 시작" Click="ResizeMenuItem_OnClick"/>
+                <MenuItem x:Name="ResizeMenuItem" Header="위치/크기 조정 시작" Click="ResizeMenuItem_OnClick"/>
                 <MenuItem Header="다른 문장 하기" Click="NextPassageMenuItem_OnClick"/>
                 <Separator/>
                 <MenuItem x:Name="ForegroundMenuItem" Header="글자 색상: 검정" Click="ForegroundMenuItem_OnClick"/>

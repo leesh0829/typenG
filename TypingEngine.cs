@@ -18,6 +18,8 @@ public sealed class TypingEngine
     private DateTimeOffset? _startedAt;
     private int _evaluatedChars;
     private int _correctChars;
+    private int _submittedChars;
+    private int _submittedWords;
 
     public TypingStats Stats { get; } = new();
     public int CurrentLineIndex { get; private set; }
@@ -47,6 +49,8 @@ public sealed class TypingEngine
         Stats.CorrectKeystrokes = 0;
         _evaluatedChars = 0;
         _correctChars = 0;
+        _submittedChars = 0;
+        _submittedWords = 0;
     }
 
     public string CurrentLine => IsPassageComplete ? string.Empty : _lines[CurrentLineIndex];
@@ -125,6 +129,8 @@ public sealed class TypingEngine
         }
 
         var line = CurrentLine;
+        _submittedChars += line.Length;
+        _submittedWords += CountWords(line);
         _evaluatedChars += line.Length;
         for (var i = 0; i < line.Length; i++)
         {
@@ -169,6 +175,14 @@ public sealed class TypingEngine
         return rendered;
     }
 
+
+    private static int CountWords(string line)
+    {
+        return line
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Length;
+    }
+
     public (double cpm, double wpm, double acc) CalculateResults()
     {
         var start = _startedAt;
@@ -181,9 +195,8 @@ public sealed class TypingEngine
 
         var elapsedMinutes = Math.Max((end - start.Value).TotalMinutes, 1.0 / 60000.0);
         var acc = _evaluatedChars == 0 ? 100 : _correctChars * 100.0 / _evaluatedChars;
-        return (
-            Stats.Cpm(elapsedMinutes),
-            Stats.Wpm(elapsedMinutes),
-            acc);
+        var cpm = _submittedChars / elapsedMinutes;
+        var wpm = _submittedWords / elapsedMinutes;
+        return (cpm, wpm, acc);
     }
 }

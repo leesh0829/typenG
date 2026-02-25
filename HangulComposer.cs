@@ -46,7 +46,11 @@ public sealed class HangulComposer
 
     public string CompositionText => BuildCurrent().ToString();
 
-    public static bool IsAsciiKoreanKey(char c) => KeyToConsonant.ContainsKey(c) || KeyToVowel.ContainsKey(c);
+    public static bool IsAsciiKoreanKey(char c)
+    {
+        var normalized = NormalizeKey(c);
+        return KeyToConsonant.ContainsKey(normalized) || KeyToVowel.ContainsKey(normalized);
+    }
 
     public void Reset()
     {
@@ -64,19 +68,33 @@ public sealed class HangulComposer
 
     public string ProcessKey(char key)
     {
-        if (!IsAsciiKoreanKey(key))
+        var normalized = NormalizeKey(key);
+        if (!IsAsciiKoreanKey(normalized))
         {
             var flushed = Flush();
             return flushed + key;
         }
 
-        if (KeyToVowel.TryGetValue(key, out var vowel))
+        if (KeyToVowel.TryGetValue(normalized, out var vowel))
         {
             return ProcessVowel(vowel);
         }
 
-        var consonant = KeyToConsonant[key];
+        var consonant = KeyToConsonant[normalized];
         return ProcessConsonant(consonant);
+    }
+
+    private static char NormalizeKey(char key)
+    {
+        if (!char.IsLetter(key))
+        {
+            return key;
+        }
+
+        // preserve actual shifted 2-beolsik keys that have distinct meaning.
+        return key is 'R' or 'E' or 'Q' or 'T' or 'W' or 'O' or 'P'
+            ? key
+            : char.ToLowerInvariant(key);
     }
 
     private string ProcessVowel(char vowel)

@@ -310,7 +310,7 @@ public partial class MainWindow : Window
 
     private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
     {
-        var parent = VisualTreeHelper.GetParent(child);
+        DependencyObject? parent = GetParentObject(child);
         while (parent is not null)
         {
             if (parent is T matched)
@@ -318,10 +318,22 @@ public partial class MainWindow : Window
                 return matched;
             }
 
-            parent = VisualTreeHelper.GetParent(parent);
+            parent = GetParentObject(parent);
         }
 
         return null;
+    }
+
+    private static DependencyObject? GetParentObject(DependencyObject child)
+    {
+        return child switch
+        {
+            null => null,
+            Visual or Visual3D => VisualTreeHelper.GetParent(child),
+            FrameworkContentElement fce => fce.Parent,
+            ContentElement ce => ContentOperations.GetParent(ce) ?? (ce as FrameworkContentElement)?.Parent,
+            _ => null
+        };
     }
 
     private void ResizeThumb_OnDragDelta(object sender, DragDeltaEventArgs e)

@@ -25,7 +25,7 @@
             </ContextMenu>
         </Grid.ContextMenu>
 
-        <Border CornerRadius="10" Background="#33000000" Padding="20">
+        <Border CornerRadius="10" Background="Transparent" Padding="20">
             <Grid ClipToBounds="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>

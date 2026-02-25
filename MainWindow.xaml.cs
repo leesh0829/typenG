@@ -431,6 +431,13 @@ public partial class MainWindow : Window
             NextLineText.Opacity = 0;
             CurrentLineText.Visibility = Visibility.Visible;
             NextLineText.Visibility = Visibility.Visible;
+
+            CurrentLineText.Inlines.Clear();
+            foreach (var inline in incomingInlines)
+            {
+                CurrentLineText.Inlines.Add(CloneInline(inline));
+            }
+
             NextLineText.Inlines.Clear();
             _isTransitioning = false;
         }

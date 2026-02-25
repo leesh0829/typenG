@@ -416,8 +416,13 @@ public partial class MainWindow : Window
 
             var tcs = new TaskCompletionSource<bool>();
             sb.Completed += (_, _) => tcs.TrySetResult(true);
-            sb.Begin();
-            await Task.WhenAny(tcs.Task, Task.Delay(280));
+            sb.Begin(this, true);
+
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(350));
+            if (completed != tcs.Task)
+            {
+                sb.Stop(this);
+            }
 
             ApplyIncomingAsCurrent(incomingInlines);
         }
@@ -427,6 +432,8 @@ public partial class MainWindow : Window
             NextTransform.Y = 90;
             CurrentLineText.Opacity = 1;
             NextLineText.Opacity = 0;
+            CurrentLineText.Visibility = Visibility.Visible;
+            NextLineText.Visibility = Visibility.Visible;
             NextLineText.Inlines.Clear();
             _isTransitioning = false;
         }

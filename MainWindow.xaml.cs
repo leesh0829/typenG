@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -232,10 +233,12 @@ public partial class MainWindow : Window
         {
             await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
             RenderCurrentLine();
+            Focus();
         }
         catch
         {
             RenderCurrentLine();
+            Focus();
             _isTransitioning = false;
         }
     }
@@ -243,6 +246,8 @@ public partial class MainWindow : Window
     private void RenderResultLine()
     {
         var (cpm, wpm, acc) = _engine.CalculateResults();
+        var resultText = $"CPM {Math.Round(cpm)}   WPM {Math.Round(wpm)}   ACC {acc:F1}%";
+        AdjustFontSizeToFit(resultText);
         CurrentLineText.Inlines.Clear();
         foreach (var inline in BuildResultInlines(cpm, wpm, acc))
         {
@@ -252,6 +257,7 @@ public partial class MainWindow : Window
 
     private void RenderCurrentLine()
     {
+        AdjustFontSizeToFit(_engine.CurrentLine);
         var inlines = BuildLineInlines(_engine.BuildRenderLine());
         CurrentLineText.Inlines.Clear();
         foreach (var inline in inlines)
@@ -285,7 +291,7 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    foreground = CreateForegroundWithOpacity(_baseBrush, 0.35);
+                    foreground = CreateForegroundWithOpacity(_baseBrush, PendingOpacity());
                 }
             }
             else
@@ -317,6 +323,45 @@ public partial class MainWindow : Window
         }
 
         return result;
+    }
+
+
+    private double PendingOpacity()
+    {
+        return _baseBrush == Brushes.Black ? 0.6 : 0.35;
+    }
+
+    private void AdjustFontSizeToFit(string text)
+    {
+        const double maxFont = 42;
+        const double minFont = 18;
+
+        var width = Math.Max(100, ActualWidth - 120);
+        if (width <= 100 || string.IsNullOrEmpty(text))
+        {
+            CurrentLineText.FontSize = maxFont;
+            NextLineText.FontSize = maxFont;
+            return;
+        }
+
+        var typeface = new Typeface(CurrentLineText.FontFamily, CurrentLineText.FontStyle, CurrentLineText.FontWeight, CurrentLineText.FontStretch);
+        var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+
+        var chosen = maxFont;
+        for (var size = maxFont; size >= minFont; size -= 1)
+        {
+            var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, size, Brushes.Black, dpi);
+            if (formatted.Width <= width)
+            {
+                chosen = size;
+                break;
+            }
+
+            chosen = minFont;
+        }
+
+        CurrentLineText.FontSize = chosen;
+        NextLineText.FontSize = chosen;
     }
 
     private List<Inline> BuildResultInlines(double cpm, double wpm, double acc)

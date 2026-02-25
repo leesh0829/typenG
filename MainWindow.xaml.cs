@@ -32,7 +32,6 @@ public partial class MainWindow : Window
         var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
 
         Debug.WriteLine(line);
-        Trace.WriteLine(line);
         Console.WriteLine(line);
 
         try
@@ -420,6 +419,7 @@ public partial class MainWindow : Window
         _isTransitioning = true;
         LogState($"PlayTransitionAsync: start incoming={incomingInlines.Count}");
 
+        Storyboard? sb = null;
         try
         {
             NextLineText.Inlines.Clear();
@@ -438,7 +438,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var sb = new Storyboard();
+            sb = new Storyboard();
             var duration = TimeSpan.FromMilliseconds(170);
 
             sb.Children.Add(MakeAnim(CurrentTransform, TranslateTransform.YProperty, 0, -90, duration));
@@ -458,6 +458,20 @@ public partial class MainWindow : Window
         }
         finally
         {
+            try
+            {
+                sb?.Remove(this);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            CurrentLineText.BeginAnimation(OpacityProperty, null);
+            NextLineText.BeginAnimation(OpacityProperty, null);
+            CurrentTransform.BeginAnimation(TranslateTransform.YProperty, null);
+            NextTransform.BeginAnimation(TranslateTransform.YProperty, null);
+
             CurrentTransform.Y = 0;
             NextTransform.Y = 90;
             CurrentLineText.Opacity = 1;

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -28,12 +29,19 @@ public partial class MainWindow : Window
 
     private void LogState(string message)
     {
+        var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+
+        Debug.WriteLine(line);
+        Trace.WriteLine(line);
+        Console.WriteLine(line);
+
         try
         {
-            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}");
+            File.AppendAllText(_logPath, line + Environment.NewLine);
         }
         catch
         {
+            // ignore logging failures
         }
     }
 
@@ -41,6 +49,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         LogState("MainWindow initialized");
+        LogState($"Log file path: {_logPath}");
 
         _caretTimer = new DispatcherTimer
         {

@@ -365,10 +365,11 @@ public partial class MainWindow : Window
     private void AdjustFontSizeToFit(string text)
     {
         const double maxFont = 42;
-        const double minFont = 18;
+        const double minFont = 10;
 
-        var width = Math.Max(100, ActualWidth - 120);
-        if (width <= 100 || string.IsNullOrEmpty(text))
+        var width = Math.Max(80, ActualWidth - 90);
+        var height = Math.Max(28, ActualHeight - 70);
+        if (string.IsNullOrEmpty(text))
         {
             CurrentLineText.FontSize = maxFont;
             NextLineText.FontSize = maxFont;
@@ -378,17 +379,15 @@ public partial class MainWindow : Window
         var typeface = new Typeface(CurrentLineText.FontFamily, CurrentLineText.FontStyle, CurrentLineText.FontWeight, CurrentLineText.FontStretch);
         var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
 
-        var chosen = maxFont;
+        var chosen = minFont;
         for (var size = maxFont; size >= minFont; size -= 1)
         {
             var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, size, Brushes.Black, dpi);
-            if (formatted.Width <= width)
+            if (formatted.Width <= width && formatted.Height <= height)
             {
                 chosen = size;
                 break;
             }
-
-            chosen = minFont;
         }
 
         CurrentLineText.FontSize = chosen;
@@ -429,7 +428,7 @@ public partial class MainWindow : Window
             }
 
             CurrentTransform.Y = 0;
-            NextTransform.Y = 90;
+            NextTransform.Y = 140;
             CurrentLineText.Opacity = 1;
             NextLineText.Opacity = 0;
 
@@ -439,11 +438,11 @@ public partial class MainWindow : Window
             }
 
             sb = new Storyboard();
-            var duration = TimeSpan.FromMilliseconds(170);
+            var duration = TimeSpan.FromMilliseconds(320);
 
-            sb.Children.Add(MakeAnim(CurrentTransform, TranslateTransform.YProperty, 0, -90, duration));
+            sb.Children.Add(MakeAnim(CurrentTransform, TranslateTransform.YProperty, 0, -140, duration));
             sb.Children.Add(MakeAnim(CurrentLineText, OpacityProperty, 1, 0, duration));
-            sb.Children.Add(MakeAnim(NextTransform, TranslateTransform.YProperty, 90, 0, duration));
+            sb.Children.Add(MakeAnim(NextTransform, TranslateTransform.YProperty, 140, 0, duration));
             sb.Children.Add(MakeAnim(NextLineText, OpacityProperty, 0, 1, duration));
 
             var tcs = new TaskCompletionSource<bool>();
@@ -473,7 +472,7 @@ public partial class MainWindow : Window
             NextTransform.BeginAnimation(TranslateTransform.YProperty, null);
 
             CurrentTransform.Y = 0;
-            NextTransform.Y = 90;
+            NextTransform.Y = 140;
             CurrentLineText.Opacity = 1;
             NextLineText.Opacity = 0;
             CurrentLineText.Visibility = Visibility.Visible;
@@ -510,7 +509,7 @@ public partial class MainWindow : Window
     {
         var anim = new DoubleAnimation(from, to, new Duration(duration))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
         Storyboard.SetTarget(anim, target);
         Storyboard.SetTargetProperty(anim, new PropertyPath(prop));
@@ -561,6 +560,19 @@ public partial class MainWindow : Window
         {
             RenderCurrentLine();
         }
+    }
+
+
+    private void Window_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (OverlayContextMenu is null)
+        {
+            return;
+        }
+
+        OverlayContextMenu.PlacementTarget = this;
+        OverlayContextMenu.IsOpen = true;
+        e.Handled = true;
     }
 
     private void Window_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

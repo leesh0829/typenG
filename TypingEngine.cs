@@ -1,0 +1,169 @@
+using TypeOverlay.Models;
+
+namespace TypeOverlay;
+
+public enum LineCharState
+{
+    Pending,
+    Correct,
+    Incorrect
+}
+
+public sealed record RenderCharacter(char Character, LineCharState State);
+
+public sealed class TypingEngine
+{
+    private readonly List<string> _lines = [];
+    private readonly List<char> _inputBuffer = [];
+    private DateTimeOffset? _startedAt;
+
+    public TypingStats Stats { get; } = new();
+    public int CurrentLineIndex { get; private set; }
+    public bool IsPassageComplete => CurrentLineIndex >= _lines.Count;
+    public DateTimeOffset? FinishedAt { get; private set; }
+
+    public void LoadPassage(IEnumerable<string> lines)
+    {
+        _lines.Clear();
+        _lines.AddRange(lines.Where(l => !string.IsNullOrWhiteSpace(l)));
+        if (_lines.Count == 0)
+        {
+            _lines.Add("(empty)");
+        }
+
+        ResetRunState();
+    }
+
+    public void ResetRunState()
+    {
+        _inputBuffer.Clear();
+        CurrentLineIndex = 0;
+        _startedAt = null;
+        FinishedAt = null;
+        Stats.TotalKeystrokes = 0;
+        Stats.CorrectKeystrokes = 0;
+    }
+
+    public string CurrentLine => IsPassageComplete ? string.Empty : _lines[CurrentLineIndex];
+
+    public bool TryApplyText(char input)
+    {
+        if (IsPassageComplete)
+        {
+            return false;
+        }
+
+        var line = CurrentLine;
+        if (_inputBuffer.Count >= line.Length)
+        {
+            // 입력 초과는 무시
+            return false;
+        }
+
+        _startedAt ??= DateTimeOffset.Now;
+        Stats.TotalKeystrokes++;
+
+        var idx = _inputBuffer.Count;
+        if (line[idx] == input)
+        {
+            Stats.CorrectKeystrokes++;
+        }
+
+        _inputBuffer.Add(input);
+        return true;
+    }
+
+    public bool HandleBackspace()
+    {
+        if (_inputBuffer.Count == 0)
+        {
+            return false;
+        }
+
+        _inputBuffer.RemoveAt(_inputBuffer.Count - 1);
+        return true;
+    }
+
+    public bool CanAdvanceLine()
+    {
+        if (IsPassageComplete)
+        {
+            return false;
+        }
+
+        var line = CurrentLine;
+        if (_inputBuffer.Count != line.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < line.Length; i++)
+        {
+            if (_inputBuffer[i] != line[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public bool AdvanceLine()
+    {
+        if (!CanAdvanceLine())
+        {
+            return false;
+        }
+
+        _inputBuffer.Clear();
+        CurrentLineIndex++;
+
+        if (IsPassageComplete)
+        {
+            FinishedAt = DateTimeOffset.Now;
+        }
+
+        return true;
+    }
+
+    public IReadOnlyList<RenderCharacter> BuildRenderLine()
+    {
+        var line = CurrentLine;
+        var rendered = new List<RenderCharacter>(line.Length);
+
+        for (var i = 0; i < line.Length; i++)
+        {
+            if (i >= _inputBuffer.Count)
+            {
+                rendered.Add(new RenderCharacter(line[i], LineCharState.Pending));
+            }
+            else if (_inputBuffer[i] == line[i])
+            {
+                rendered.Add(new RenderCharacter(line[i], LineCharState.Correct));
+            }
+            else
+            {
+                rendered.Add(new RenderCharacter(line[i], LineCharState.Incorrect));
+            }
+        }
+
+        return rendered;
+    }
+
+    public (double cpm, double wpm, double acc) CalculateResults()
+    {
+        var start = _startedAt;
+        var end = FinishedAt ?? DateTimeOffset.Now;
+
+        if (start is null)
+        {
+            return (0, 0, 100);
+        }
+
+        var elapsedMinutes = Math.Max((end - start.Value).TotalMinutes, 1.0 / 60000.0);
+        return (
+            Stats.Cpm(elapsedMinutes),
+            Stats.Wpm(elapsedMinutes),
+            Stats.AccuracyPercent());
+    }
+}

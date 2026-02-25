@@ -136,11 +136,11 @@ public partial class MainWindow : Window
         {
             var run = new Run(item.Character.ToString())
             {
-                Foreground = item.State == LineCharState.Incorrect ? Brushes.Red : _baseBrush,
-                Opacity = item.State switch
+                Foreground = item.State switch
                 {
-                    LineCharState.Pending => 0.35,
-                    _ => 1.0
+                    LineCharState.Incorrect => Brushes.Red,
+                    LineCharState.Pending => CreateForegroundWithOpacity(_baseBrush, 0.35),
+                    _ => CreateForegroundWithOpacity(_baseBrush, 1.0)
                 }
             };
 
@@ -154,12 +154,19 @@ public partial class MainWindow : Window
     {
         return
         [
-            new Run($"CPM {Math.Round(cpm)}") { Foreground = _baseBrush, Opacity = 1.0 },
+            new Run($"CPM {Math.Round(cpm)}") { Foreground = CreateForegroundWithOpacity(_baseBrush, 1.0) },
             new Run("   ") { Foreground = _baseBrush },
-            new Run($"WPM {Math.Round(wpm)}") { Foreground = _baseBrush, Opacity = 1.0 },
+            new Run($"WPM {Math.Round(wpm)}") { Foreground = CreateForegroundWithOpacity(_baseBrush, 1.0) },
             new Run("   ") { Foreground = _baseBrush },
-            new Run($"ACC {acc:F1}%") { Foreground = _baseBrush, Opacity = 1.0 }
+            new Run($"ACC {acc:F1}%") { Foreground = CreateForegroundWithOpacity(_baseBrush, 1.0) }
         ];
+    }
+
+    private static Brush CreateForegroundWithOpacity(Brush source, double opacity)
+    {
+        var clone = source.Clone();
+        clone.Opacity = opacity;
+        return clone;
     }
 
     private async Task PlayTransitionAsync(List<Inline> incomingInlines)
@@ -215,7 +222,6 @@ public partial class MainWindow : Window
         return new Run(run.Text)
         {
             Foreground = run.Foreground,
-            Opacity = run.Opacity,
             FontWeight = run.FontWeight
         };
     }

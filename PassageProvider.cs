@@ -1,4 +1,4 @@
-namespace TypeOverlay;
+namespace typenG;
 
 public sealed class PassageProvider
 {

@@ -1,6 +1,6 @@
-using TypeOverlay.Models;
+using typenG.Models;
 
-namespace TypeOverlay;
+namespace typenG;
 
 public enum LineCharState
 {

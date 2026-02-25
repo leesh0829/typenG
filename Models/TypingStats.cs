@@ -1,4 +1,4 @@
-namespace TypeOverlay.Models;
+namespace typenG.Models;
 
 public sealed class TypingStats
 {

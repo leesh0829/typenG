@@ -1,4 +1,4 @@
-namespace TypeOverlay;
+namespace typenG;
 
 /// <summary>
 /// Lightweight 2-beolsik Hangul composer for ASCII key input.

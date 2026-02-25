@@ -1,4 +1,4 @@
-# TypeOverlay (MVP)
+# typenG (MVP)
 
 투명 오버레이(Always on top)에서 한 줄씩 타자 연습을 진행하는 .NET 8 WPF 앱입니다.
 
@@ -29,10 +29,10 @@
 
 ```bash
 dotnet restore
-dotnet build TypeOverlay.csproj -c Release
+dotnet build typenG.csproj -c Release
 ```
 
-Visual Studio 또는 Rider에서 `TypeOverlay.csproj`를 열고 실행하면 됩니다.
+Visual Studio 또는 Rider에서 `typenG.csproj`를 열고 실행하면 됩니다.
 
 ## 프로젝트 구조
 - `App.xaml`, `App.xaml.cs`

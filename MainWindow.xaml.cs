@@ -8,7 +8,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 
-namespace TypeOverlay;
+namespace typenG;
 
 public partial class MainWindow : Window
 {
@@ -210,7 +210,21 @@ public partial class MainWindow : Window
         _hangulComposer.Reset();
         _compositionText = string.Empty;
         _caretVisible = true;
-        await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
+
+        if (_isTransitioning)
+        {
+            return;
+        }
+
+        try
+        {
+            await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
+        }
+        catch
+        {
+            RenderCurrentLine();
+            _isTransitioning = false;
+        }
     }
 
     private void RenderCurrentLine()
@@ -304,43 +318,58 @@ public partial class MainWindow : Window
     {
         _isTransitioning = true;
 
-        NextLineText.Inlines.Clear();
-        foreach (var inline in incomingInlines)
+        try
         {
-            NextLineText.Inlines.Add(inline);
+            NextLineText.Inlines.Clear();
+            foreach (var inline in incomingInlines)
+            {
+                NextLineText.Inlines.Add(inline);
+            }
+
+            CurrentTransform.Y = 0;
+            NextTransform.Y = 90;
+            CurrentLineText.Opacity = 1;
+            NextLineText.Opacity = 0;
+
+            if (!IsLoaded)
+            {
+                ApplyIncomingAsCurrent(incomingInlines);
+                return;
+            }
+
+            var sb = new Storyboard();
+            var duration = TimeSpan.FromMilliseconds(170);
+
+            sb.Children.Add(MakeAnim(CurrentTransform, TranslateTransform.YProperty, 0, -90, duration));
+            sb.Children.Add(MakeAnim(CurrentLineText, OpacityProperty, 1, 0, duration));
+            sb.Children.Add(MakeAnim(NextTransform, TranslateTransform.YProperty, 90, 0, duration));
+            sb.Children.Add(MakeAnim(NextLineText, OpacityProperty, 0, 1, duration));
+
+            var tcs = new TaskCompletionSource<bool>();
+            sb.Completed += (_, _) => tcs.TrySetResult(true);
+            sb.Begin();
+            await tcs.Task;
+
+            ApplyIncomingAsCurrent(incomingInlines);
         }
+        finally
+        {
+            CurrentTransform.Y = 0;
+            NextTransform.Y = 90;
+            CurrentLineText.Opacity = 1;
+            NextLineText.Opacity = 0;
+            NextLineText.Inlines.Clear();
+            _isTransitioning = false;
+        }
+    }
 
-        CurrentTransform.Y = 0;
-        NextTransform.Y = 90;
-        CurrentLineText.Opacity = 1;
-        NextLineText.Opacity = 0;
-
-        var sb = new Storyboard();
-        var duration = TimeSpan.FromMilliseconds(170);
-
-        sb.Children.Add(MakeAnim(CurrentTransform, TranslateTransform.YProperty, 0, -90, duration));
-        sb.Children.Add(MakeAnim(CurrentLineText, OpacityProperty, 1, 0, duration));
-        sb.Children.Add(MakeAnim(NextTransform, TranslateTransform.YProperty, 90, 0, duration));
-        sb.Children.Add(MakeAnim(NextLineText, OpacityProperty, 0, 1, duration));
-
-        var tcs = new TaskCompletionSource<bool>();
-        sb.Completed += (_, _) => tcs.TrySetResult(true);
-        sb.Begin();
-        await tcs.Task;
-
+    private void ApplyIncomingAsCurrent(List<Inline> incomingInlines)
+    {
         CurrentLineText.Inlines.Clear();
         foreach (var inline in incomingInlines)
         {
             CurrentLineText.Inlines.Add(CloneInline(inline));
         }
-
-        CurrentTransform.Y = 0;
-        NextTransform.Y = 90;
-        CurrentLineText.Opacity = 1;
-        NextLineText.Opacity = 0;
-        NextLineText.Inlines.Clear();
-
-        _isTransitioning = false;
     }
 
     private static Inline CloneInline(Inline inline)

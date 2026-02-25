@@ -1,0 +1,41 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+
+# Rider / ReSharper
+.idea/
+_ReSharper*/
+
+# Build outputs
+bin/
+obj/
+out/
+
+# .NET generated files
+*.pdb
+*.mdb
+*.cache
+*.aps
+*.ilk
+*.nupkg
+*.snupkg
+project.assets.json
+project.nuget.cache
+
+# Local runtime artifacts
+*.log
+
+# Copilot / IntelliSense local indexes
+CopilotIndices*/
+FileContentIndex/
+Semantic*/
+DesignTimeBuild/
+ProjectEvaluation/
+
+# Legacy project names that may appear in this repo history
+TypeOverlay*/
+typeoverlay*/

@@ -27,6 +27,8 @@ public partial class MainWindow : Window
     private Brush _baseBrush = Brushes.Black;
     private readonly string _logPath = Path.Combine(AppContext.BaseDirectory, "typenG.log");
 
+    private bool IsLongPassage => _engine.TotalLineCount > 2;
+
     private void LogState(string message)
     {
         var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
@@ -283,11 +285,15 @@ public partial class MainWindow : Window
         {
             CurrentLineText.Inlines.Add(inline);
         }
+
+        ProgressText.Visibility = Visibility.Collapsed;
+        UpcomingLineText.Visibility = Visibility.Collapsed;
     }
 
     private void RenderCurrentLine()
     {
         AdjustFontSizeToFit(_engine.CurrentLine);
+        RenderPassageMeta();
         var inlines = BuildLineInlines(_engine.BuildRenderLine());
         LogState($"RenderCurrentLine: lineIndex={_engine.CurrentLineIndex} textLen={_engine.CurrentLine.Length} inlineCount={inlines.Count}");
         CurrentLineText.Inlines.Clear();
@@ -295,6 +301,31 @@ public partial class MainWindow : Window
         {
             CurrentLineText.Inlines.Add(inline);
         }
+    }
+
+    private void RenderPassageMeta()
+    {
+        if (!IsLongPassage || _isResultScreen)
+        {
+            ProgressText.Visibility = Visibility.Collapsed;
+            UpcomingLineText.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ProgressText.Text = $"{Math.Min(_engine.CurrentLineIndex + 1, _engine.TotalLineCount)}/{_engine.TotalLineCount}";
+        ProgressText.Foreground = CreateForegroundWithOpacity(_baseBrush, 0.85);
+        ProgressText.Visibility = Visibility.Visible;
+
+        var nextLine = _engine.NextLine;
+        if (string.IsNullOrWhiteSpace(nextLine))
+        {
+            UpcomingLineText.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        UpcomingLineText.Text = nextLine;
+        UpcomingLineText.Foreground = CreateForegroundWithOpacity(_baseBrush, 0.55);
+        UpcomingLineText.Visibility = Visibility.Visible;
     }
 
     private List<Inline> BuildLineInlines(IReadOnlyList<RenderCharacter> items)
@@ -368,11 +399,13 @@ public partial class MainWindow : Window
         const double minFont = 10;
 
         var width = Math.Max(80, ActualWidth - 90);
-        var height = Math.Max(28, ActualHeight - 70);
+        var reservedHeight = IsLongPassage ? 120 : 70;
+        var height = Math.Max(28, ActualHeight - reservedHeight);
         if (string.IsNullOrEmpty(text))
         {
             CurrentLineText.FontSize = maxFont;
             NextLineText.FontSize = maxFont;
+            UpcomingLineText.FontSize = 24;
             return;
         }
 
@@ -392,6 +425,7 @@ public partial class MainWindow : Window
 
         CurrentLineText.FontSize = chosen;
         NextLineText.FontSize = chosen;
+        UpcomingLineText.FontSize = Math.Max(14, chosen * 0.62);
     }
 
     private List<Inline> BuildResultInlines(double cpm, double wpm, double acc)

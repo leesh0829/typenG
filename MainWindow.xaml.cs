@@ -22,7 +22,7 @@ public partial class MainWindow : Window
     private bool _caretVisible = true;
     private readonly HangulComposer _hangulComposer = new();
     private string _compositionText = string.Empty;
-    private Brush _baseBrush = Brushes.White;
+    private Brush _baseBrush = Brushes.Black;
 
     public MainWindow()
     {
@@ -263,7 +263,7 @@ public partial class MainWindow : Window
 
             if (isCaretPosition && _caretVisible)
             {
-                result.Add(new Run("|") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95) });
+                result.Add(new Run("¦") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95), FontWeight = FontWeights.Thin });
             }
 
             result.Add(run);
@@ -271,9 +271,10 @@ public partial class MainWindow : Window
 
         if (caretIndex >= items.Count)
         {
-            result.Add(new Run(_caretVisible ? "|" : " ")
+            result.Add(new Run(_caretVisible ? "¦" : " ")
             {
-                Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9)
+                Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9),
+                FontWeight = FontWeights.Thin
             });
         }
 

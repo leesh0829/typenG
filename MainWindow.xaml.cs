@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -23,10 +24,23 @@ public partial class MainWindow : Window
     private readonly HangulComposer _hangulComposer = new();
     private string _compositionText = string.Empty;
     private Brush _baseBrush = Brushes.Black;
+    private readonly string _logPath = Path.Combine(AppContext.BaseDirectory, "typenG.log");
+
+    private void LogState(string message)
+    {
+        try
+        {
+            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}{Environment.NewLine}");
+        }
+        catch
+        {
+        }
+    }
 
     public MainWindow()
     {
         InitializeComponent();
+        LogState("MainWindow initialized");
 
         _caretTimer = new DispatcherTimer
         {
@@ -180,11 +194,14 @@ public partial class MainWindow : Window
 
     private async Task AdvanceLineAsync()
     {
+        LogState($"AdvanceLineAsync: request canAdvance={_engine.CanAdvanceLine()} lineIndex={_engine.CurrentLineIndex}");
         if (!_engine.AdvanceLine())
         {
+            LogState("AdvanceLineAsync: rejected by engine");
             return;
         }
 
+        LogState($"AdvanceLineAsync: advanced to lineIndex={_engine.CurrentLineIndex} isComplete={_engine.IsPassageComplete}");
         _hangulComposer.Reset();
         _compositionText = string.Empty;
         _caretVisible = true;
@@ -205,6 +222,8 @@ public partial class MainWindow : Window
     private void LoadNextPassage(bool skipAnimation)
     {
         _engine.LoadPassage(_passageProvider.GetNextPassage());
+        LogState($"TransitionToNextPassageAsync: loaded lineLen={_engine.CurrentLine.Length} lineIndex={_engine.CurrentLineIndex}");
+        LogState($"LoadNextPassage: lineLen={_engine.CurrentLine.Length} lineIndex={_engine.CurrentLineIndex}");
         _isResultScreen = false;
         _hangulComposer.Reset();
         _compositionText = string.Empty;
@@ -232,12 +251,15 @@ public partial class MainWindow : Window
         try
         {
             await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
+            LogState("TransitionToNextPassageAsync: animation completed");
             RenderCurrentLine();
+            LogState($"TransitionToNextPassageAsync: rendered lineLen={_engine.CurrentLine.Length} inlineCount={CurrentLineText.Inlines.Count}");
             Focus();
         }
         catch
         {
             RenderCurrentLine();
+            LogState($"TransitionToNextPassageAsync: rendered lineLen={_engine.CurrentLine.Length} inlineCount={CurrentLineText.Inlines.Count}");
             Focus();
             _isTransitioning = false;
         }
@@ -259,6 +281,7 @@ public partial class MainWindow : Window
     {
         AdjustFontSizeToFit(_engine.CurrentLine);
         var inlines = BuildLineInlines(_engine.BuildRenderLine());
+        LogState($"RenderCurrentLine: lineIndex={_engine.CurrentLineIndex} textLen={_engine.CurrentLine.Length} inlineCount={inlines.Count}");
         CurrentLineText.Inlines.Clear();
         foreach (var inline in inlines)
         {
@@ -386,6 +409,7 @@ public partial class MainWindow : Window
     private async Task PlayTransitionAsync(List<Inline> incomingInlines)
     {
         _isTransitioning = true;
+        LogState($"PlayTransitionAsync: start incoming={incomingInlines.Count}");
 
         try
         {
@@ -439,6 +463,7 @@ public partial class MainWindow : Window
             }
 
             NextLineText.Inlines.Clear();
+            LogState($"PlayTransitionAsync: finalize currentInlineCount={CurrentLineText.Inlines.Count} currentOpacity={CurrentLineText.Opacity:F2}");
             _isTransitioning = false;
         }
     }

@@ -5,7 +5,6 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 
 namespace typenG;
@@ -501,7 +500,7 @@ public partial class MainWindow : Window
         return child switch
         {
             null => null,
-            Visual or Visual3D => VisualTreeHelper.GetParent(child),
+            Visual or System.Windows.Media.Media3D.Visual3D => VisualTreeHelper.GetParent(child),
             FrameworkContentElement fce => fce.Parent,
             ContentElement ce => ContentOperations.GetParent(ce) ?? (ce as FrameworkContentElement)?.Parent,
             _ => null

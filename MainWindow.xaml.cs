@@ -1,11 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
-using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 
 namespace TypeOverlay;
 
@@ -13,15 +14,36 @@ public partial class MainWindow : Window
 {
     private readonly TypingEngine _engine = new();
     private readonly PassageProvider _passageProvider = new();
+    private readonly DispatcherTimer _caretTimer;
 
     private bool _isTransitioning;
     private bool _isResizeMode;
     private bool _isResultScreen;
+    private bool _caretVisible = true;
+    private string _compositionText = string.Empty;
     private Brush _baseBrush = Brushes.White;
 
     public MainWindow()
     {
         InitializeComponent();
+
+        _caretTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(420)
+        };
+        _caretTimer.Tick += (_, _) =>
+        {
+            _caretVisible = !_caretVisible;
+            if (!_isTransitioning && !_isResultScreen)
+            {
+                RenderCurrentLine();
+            }
+        };
+        _caretTimer.Start();
+
+        TextCompositionManager.AddPreviewTextInputStartHandler(this, Window_PreviewTextInputStart);
+        TextCompositionManager.AddPreviewTextInputUpdateHandler(this, Window_PreviewTextInputUpdate);
+
         LoadNextPassage(skipAnimation: true);
         Focus();
     }
@@ -41,11 +63,13 @@ public partial class MainWindow : Window
                 await TransitionToNextPassageAsync();
                 e.Handled = true;
             }
+
             return;
         }
 
         if (e.Key is Key.Back)
         {
+            _compositionText = string.Empty;
             _engine.HandleBackspace();
             RenderCurrentLine();
             e.Handled = true;
@@ -54,6 +78,7 @@ public partial class MainWindow : Window
 
         if (e.Key is Key.Space or Key.Enter)
         {
+            _compositionText = string.Empty;
             if (_engine.CanAdvanceLine())
             {
                 await AdvanceLineAsync();
@@ -62,7 +87,30 @@ public partial class MainWindow : Window
             e.Handled = true;
             return;
         }
+    }
 
+    private void Window_PreviewTextInputStart(object sender, TextCompositionEventArgs e)
+    {
+        if (_isTransitioning || _isResultScreen)
+        {
+            return;
+        }
+
+        _compositionText = e.TextComposition.CompositionText ?? string.Empty;
+        _caretVisible = true;
+        RenderCurrentLine();
+    }
+
+    private void Window_PreviewTextInputUpdate(object sender, TextCompositionEventArgs e)
+    {
+        if (_isTransitioning || _isResultScreen)
+        {
+            return;
+        }
+
+        _compositionText = e.TextComposition.CompositionText ?? string.Empty;
+        _caretVisible = true;
+        RenderCurrentLine();
     }
 
     private void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -78,6 +126,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        _compositionText = string.Empty;
+        _caretVisible = true;
+
         _engine.TryApplyText(e.Text[0]);
         RenderCurrentLine();
         e.Handled = true;
@@ -89,6 +140,9 @@ public partial class MainWindow : Window
         {
             return;
         }
+
+        _compositionText = string.Empty;
+        _caretVisible = true;
 
         if (_engine.IsPassageComplete)
         {
@@ -105,6 +159,8 @@ public partial class MainWindow : Window
     {
         _engine.LoadPassage(_passageProvider.GetNextPassage());
         _isResultScreen = false;
+        _compositionText = string.Empty;
+        _caretVisible = true;
 
         if (skipAnimation)
         {
@@ -116,6 +172,8 @@ public partial class MainWindow : Window
     {
         _engine.LoadPassage(_passageProvider.GetNextPassage());
         _isResultScreen = false;
+        _compositionText = string.Empty;
+        _caretVisible = true;
         await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
     }
 
@@ -131,21 +189,56 @@ public partial class MainWindow : Window
 
     private List<Inline> BuildLineInlines(IReadOnlyList<RenderCharacter> items)
     {
-        var result = new List<Inline>(items.Count);
+        var result = new List<Inline>(items.Count + 1);
+        var caretIndex = Math.Min(_engine.CurrentInputLength, items.Count);
 
-        foreach (var item in items)
+        for (var i = 0; i < items.Count; i++)
         {
-            var run = new Run(item.Character.ToString())
+            var item = items[i];
+            var isCaretPosition = i == caretIndex;
+            var runText = item.Character.ToString();
+
+            Brush foreground;
+            if (item.State == LineCharState.Incorrect)
             {
-                Foreground = item.State switch
+                foreground = Brushes.Red;
+            }
+            else if (item.State == LineCharState.Pending)
+            {
+                if (isCaretPosition && !string.IsNullOrEmpty(_compositionText))
                 {
-                    LineCharState.Incorrect => Brushes.Red,
-                    LineCharState.Pending => CreateForegroundWithOpacity(_baseBrush, 0.35),
-                    _ => CreateForegroundWithOpacity(_baseBrush, 1.0)
+                    runText = _compositionText;
+                    foreground = CreateForegroundWithOpacity(_baseBrush, 1.0);
                 }
+                else
+                {
+                    foreground = CreateForegroundWithOpacity(_baseBrush, 0.35);
+                }
+            }
+            else
+            {
+                foreground = CreateForegroundWithOpacity(_baseBrush, 1.0);
+            }
+
+            var run = new Run(runText)
+            {
+                Foreground = foreground
             };
 
+            if (isCaretPosition && _caretVisible)
+            {
+                run.TextDecorations = TextDecorations.Underline;
+            }
+
             result.Add(run);
+        }
+
+        if (caretIndex >= items.Count)
+        {
+            result.Add(new Run(_caretVisible ? "▁" : " ")
+            {
+                Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9)
+            });
         }
 
         return result;
@@ -223,7 +316,8 @@ public partial class MainWindow : Window
         return new Run(run.Text)
         {
             Foreground = run.Foreground,
-            FontWeight = run.FontWeight
+            FontWeight = run.FontWeight,
+            TextDecorations = run.TextDecorations
         };
     }
 
@@ -256,6 +350,7 @@ public partial class MainWindow : Window
     private void ResizeMenuItem_OnClick(object sender, RoutedEventArgs e)
     {
         _isResizeMode = !_isResizeMode;
+        ResizeMode = _isResizeMode ? ResizeMode.CanResize : ResizeMode.NoResize;
         ResizeThumb.Visibility = _isResizeMode ? Visibility.Visible : Visibility.Collapsed;
         ResizeMenuItem.Header = _isResizeMode ? "화면 조정 끝내기" : "화면 조정 시작";
     }
@@ -290,13 +385,24 @@ public partial class MainWindow : Window
 
     private void Window_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.Source is DependencyObject source)
+        if (e.Source is not DependencyObject source)
         {
-            var menu = FindVisualParent<ContextMenu>(source);
-            if (menu is not null)
-            {
-                return;
-            }
+            return;
+        }
+
+        if (FindVisualParent<ContextMenu>(source) is not null)
+        {
+            return;
+        }
+
+        if (FindVisualParent<Thumb>(source) is not null || source is Thumb)
+        {
+            return;
+        }
+
+        if (_isResizeMode)
+        {
+            return;
         }
 
         try

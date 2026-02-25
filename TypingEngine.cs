@@ -21,6 +21,7 @@ public sealed class TypingEngine
     public int CurrentLineIndex { get; private set; }
     public bool IsPassageComplete => CurrentLineIndex >= _lines.Count;
     public DateTimeOffset? FinishedAt { get; private set; }
+    public int CurrentInputLength => _inputBuffer.Count;
 
     public void LoadPassage(IEnumerable<string> lines)
     {

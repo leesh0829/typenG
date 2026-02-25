@@ -6,6 +6,8 @@
 - 투명 배경 + 상단 고정(WindowStyle=None, AllowsTransparency=True, Topmost=True)
 - 현재 타이핑 줄 1줄만 표시
 - 문자 단위 상태 표시
+- 현재 입력 위치 깜빡임 커서(밑줄/끝 커서)
+- 한글 조합 중 자모(IME composition) 미리보기 표시
   - 미입력: 반투명(Opacity 0.35)
   - 정답: 불투명
   - 오타 위치: 빨간색

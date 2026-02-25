@@ -47,6 +47,23 @@ public sealed class TypingEngine
 
     public string CurrentLine => IsPassageComplete ? string.Empty : _lines[CurrentLineIndex];
 
+
+    public bool IsCurrentTargetHangul()
+    {
+        if (IsPassageComplete)
+        {
+            return false;
+        }
+
+        var idx = Math.Min(_inputBuffer.Count, CurrentLine.Length - 1);
+        if (idx < 0 || idx >= CurrentLine.Length)
+        {
+            return false;
+        }
+
+        var c = CurrentLine[idx];
+        return (c >= '가' && c <= '힣') || (c >= 'ㄱ' && c <= 'ㆎ');
+    }
     public bool TryApplyText(char input)
     {
         if (IsPassageComplete)

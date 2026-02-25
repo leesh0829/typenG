@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private bool _isResizeMode;
     private bool _isResultScreen;
     private bool _caretVisible = true;
+    private readonly HangulComposer _hangulComposer = new();
     private string _compositionText = string.Empty;
     private Brush _baseBrush = Brushes.White;
 
@@ -41,9 +42,6 @@ public partial class MainWindow : Window
         };
         _caretTimer.Start();
 
-        TextCompositionManager.AddPreviewTextInputStartHandler(this, Window_PreviewTextInputStart);
-        TextCompositionManager.AddPreviewTextInputUpdateHandler(this, Window_PreviewTextInputUpdate);
-
         LoadNextPassage(skipAnimation: true);
         Focus();
     }
@@ -58,7 +56,7 @@ public partial class MainWindow : Window
 
         if (_isResultScreen)
         {
-            if (e.Key is Key.Enter)
+            if (e.Key is Key.Enter or Key.Space)
             {
                 await TransitionToNextPassageAsync();
                 e.Handled = true;
@@ -70,15 +68,17 @@ public partial class MainWindow : Window
         if (e.Key is Key.Back)
         {
             _compositionText = string.Empty;
+            _hangulComposer.Reset();
             _engine.HandleBackspace();
             RenderCurrentLine();
             e.Handled = true;
             return;
         }
 
-        if (e.Key is Key.Space or Key.Enter)
+        if (e.Key is Key.Enter)
         {
             _compositionText = string.Empty;
+            CommitComposerTail();
             if (_engine.CanAdvanceLine())
             {
                 await AdvanceLineAsync();
@@ -87,30 +87,15 @@ public partial class MainWindow : Window
             e.Handled = true;
             return;
         }
-    }
 
-    private void Window_PreviewTextInputStart(object sender, TextCompositionEventArgs e)
-    {
-        if (_isTransitioning || _isResultScreen)
+        if (e.Key is Key.Space && _engine.CanAdvanceLine())
         {
+            _compositionText = string.Empty;
+            CommitComposerTail();
+            await AdvanceLineAsync();
+            e.Handled = true;
             return;
         }
-
-        _compositionText = e.TextComposition.CompositionText ?? string.Empty;
-        _caretVisible = true;
-        RenderCurrentLine();
-    }
-
-    private void Window_PreviewTextInputUpdate(object sender, TextCompositionEventArgs e)
-    {
-        if (_isTransitioning || _isResultScreen)
-        {
-            return;
-        }
-
-        _compositionText = e.TextComposition.CompositionText ?? string.Empty;
-        _caretVisible = true;
-        RenderCurrentLine();
     }
 
     private void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -126,12 +111,60 @@ public partial class MainWindow : Window
             return;
         }
 
-        _compositionText = string.Empty;
         _caretVisible = true;
 
-        _engine.TryApplyText(e.Text[0]);
+        ProcessIncomingText(e.Text);
         RenderCurrentLine();
         e.Handled = true;
+    }
+
+
+    private void ProcessIncomingText(string text)
+    {
+        foreach (var ch in text)
+        {
+            if (ch == '\r' || ch == '\n')
+            {
+                continue;
+            }
+
+            var expectHangul = _engine.IsCurrentTargetHangul();
+            if (expectHangul && HangulComposer.IsAsciiKoreanKey(ch))
+            {
+                var committed = _hangulComposer.ProcessKey(ch);
+                ApplyCommittedText(committed);
+                _compositionText = _hangulComposer.CompositionText;
+                continue;
+            }
+
+            CommitComposerTail();
+            _engine.TryApplyText(ch);
+        }
+
+        if (!_engine.IsCurrentTargetHangul())
+        {
+            _compositionText = string.Empty;
+        }
+    }
+
+    private void CommitComposerTail()
+    {
+        var flushed = _hangulComposer.Flush();
+        ApplyCommittedText(flushed);
+        _compositionText = string.Empty;
+    }
+
+    private void ApplyCommittedText(string committed)
+    {
+        if (string.IsNullOrEmpty(committed))
+        {
+            return;
+        }
+
+        foreach (var c in committed)
+        {
+            _engine.TryApplyText(c);
+        }
     }
 
     private async Task AdvanceLineAsync()
@@ -141,6 +174,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        _hangulComposer.Reset();
         _compositionText = string.Empty;
         _caretVisible = true;
 
@@ -159,6 +193,7 @@ public partial class MainWindow : Window
     {
         _engine.LoadPassage(_passageProvider.GetNextPassage());
         _isResultScreen = false;
+        _hangulComposer.Reset();
         _compositionText = string.Empty;
         _caretVisible = true;
 
@@ -172,6 +207,7 @@ public partial class MainWindow : Window
     {
         _engine.LoadPassage(_passageProvider.GetNextPassage());
         _isResultScreen = false;
+        _hangulComposer.Reset();
         _compositionText = string.Empty;
         _caretVisible = true;
         await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
@@ -227,7 +263,7 @@ public partial class MainWindow : Window
 
             if (isCaretPosition && _caretVisible)
             {
-                run.TextDecorations = TextDecorations.Underline;
+                result.Add(new Run("|") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95) });
             }
 
             result.Add(run);
@@ -235,7 +271,7 @@ public partial class MainWindow : Window
 
         if (caretIndex >= items.Count)
         {
-            result.Add(new Run(_caretVisible ? "▁" : " ")
+            result.Add(new Run(_caretVisible ? "|" : " ")
             {
                 Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9)
             });

@@ -100,7 +100,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    private async void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         if (_isTransitioning || _isResultScreen)
         {
@@ -117,7 +117,7 @@ public partial class MainWindow : Window
         {
             _compositionText = string.Empty;
             CommitComposerTail();
-            _ = AdvanceLineAsync();
+            await AdvanceLineAsync();
             e.Handled = true;
             return;
         }
@@ -193,10 +193,12 @@ public partial class MainWindow : Window
             var (cpm, wpm, acc) = _engine.CalculateResults();
             await PlayTransitionAsync(BuildResultInlines(cpm, wpm, acc));
             _isResultScreen = true;
+            RenderResultLine();
             return;
         }
 
         await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
+        RenderCurrentLine();
     }
 
     private void LoadNextPassage(bool skipAnimation)
@@ -229,11 +231,22 @@ public partial class MainWindow : Window
         try
         {
             await PlayTransitionAsync(BuildLineInlines(_engine.BuildRenderLine()));
+            RenderCurrentLine();
         }
         catch
         {
             RenderCurrentLine();
             _isTransitioning = false;
+        }
+    }
+
+    private void RenderResultLine()
+    {
+        var (cpm, wpm, acc) = _engine.CalculateResults();
+        CurrentLineText.Inlines.Clear();
+        foreach (var inline in BuildResultInlines(cpm, wpm, acc))
+        {
+            CurrentLineText.Inlines.Add(inline);
         }
     }
 
@@ -447,12 +460,7 @@ public partial class MainWindow : Window
 
         if (_isResultScreen)
         {
-            var (cpm, wpm, acc) = _engine.CalculateResults();
-            CurrentLineText.Inlines.Clear();
-            foreach (var inline in BuildResultInlines(cpm, wpm, acc))
-            {
-                CurrentLineText.Inlines.Add(inline);
-            }
+            RenderResultLine();
         }
         else
         {

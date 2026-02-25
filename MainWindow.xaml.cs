@@ -392,7 +392,7 @@ public partial class MainWindow : Window
             NextLineText.Inlines.Clear();
             foreach (var inline in incomingInlines)
             {
-                NextLineText.Inlines.Add(inline);
+                NextLineText.Inlines.Add(CloneInline(inline));
             }
 
             CurrentTransform.Y = 0;
@@ -402,7 +402,6 @@ public partial class MainWindow : Window
 
             if (!IsLoaded)
             {
-                ApplyIncomingAsCurrent(incomingInlines);
                 return;
             }
 
@@ -423,8 +422,6 @@ public partial class MainWindow : Window
             {
                 sb.Stop(this);
             }
-
-            ApplyIncomingAsCurrent(incomingInlines);
         }
         finally
         {
@@ -436,15 +433,6 @@ public partial class MainWindow : Window
             NextLineText.Visibility = Visibility.Visible;
             NextLineText.Inlines.Clear();
             _isTransitioning = false;
-        }
-    }
-
-    private void ApplyIncomingAsCurrent(List<Inline> incomingInlines)
-    {
-        CurrentLineText.Inlines.Clear();
-        foreach (var inline in incomingInlines)
-        {
-            CurrentLineText.Inlines.Add(CloneInline(inline));
         }
     }
 

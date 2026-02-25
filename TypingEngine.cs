@@ -16,6 +16,8 @@ public sealed class TypingEngine
     private readonly List<string> _lines = [];
     private readonly List<char> _inputBuffer = [];
     private DateTimeOffset? _startedAt;
+    private int _evaluatedChars;
+    private int _correctChars;
 
     public TypingStats Stats { get; } = new();
     public int CurrentLineIndex { get; private set; }
@@ -43,6 +45,8 @@ public sealed class TypingEngine
         FinishedAt = null;
         Stats.TotalKeystrokes = 0;
         Stats.CorrectKeystrokes = 0;
+        _evaluatedChars = 0;
+        _correctChars = 0;
     }
 
     public string CurrentLine => IsPassageComplete ? string.Empty : _lines[CurrentLineIndex];
@@ -110,20 +114,7 @@ public sealed class TypingEngine
         }
 
         var line = CurrentLine;
-        if (_inputBuffer.Count != line.Length)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < line.Length; i++)
-        {
-            if (_inputBuffer[i] != line[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return _inputBuffer.Count == line.Length;
     }
 
     public bool AdvanceLine()
@@ -131,6 +122,16 @@ public sealed class TypingEngine
         if (!CanAdvanceLine())
         {
             return false;
+        }
+
+        var line = CurrentLine;
+        _evaluatedChars += line.Length;
+        for (var i = 0; i < line.Length; i++)
+        {
+            if (_inputBuffer[i] == line[i])
+            {
+                _correctChars++;
+            }
         }
 
         _inputBuffer.Clear();
@@ -179,9 +180,10 @@ public sealed class TypingEngine
         }
 
         var elapsedMinutes = Math.Max((end - start.Value).TotalMinutes, 1.0 / 60000.0);
+        var acc = _evaluatedChars == 0 ? 100 : _correctChars * 100.0 / _evaluatedChars;
         return (
             Stats.Cpm(elapsedMinutes),
             Stats.Wpm(elapsedMinutes),
-            Stats.AccuracyPercent());
+            acc);
     }
 }

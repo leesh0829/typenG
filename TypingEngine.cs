@@ -35,6 +35,16 @@ public sealed class TypingEngine
         _startedAt ??= DateTimeOffset.Now;
     }
 
+    public void RegisterKeystroke(bool isCorrectKeystroke = false)
+    {
+        EnsureTimingStarted();
+        Stats.TotalKeystrokes++;
+        if (isCorrectKeystroke)
+        {
+            Stats.CorrectKeystrokes++;
+        }
+    }
+
     public void LoadPassage(IEnumerable<string> lines)
     {
         _lines.Clear();
@@ -94,15 +104,7 @@ public sealed class TypingEngine
             return false;
         }
 
-        EnsureTimingStarted();
-        Stats.TotalKeystrokes++;
-
         var idx = _inputBuffer.Count;
-        if (line[idx] == input)
-        {
-            Stats.CorrectKeystrokes++;
-        }
-
         _inputBuffer.Add(input);
         return true;
     }
@@ -203,7 +205,7 @@ public sealed class TypingEngine
 
         var elapsedMinutes = Math.Max((end - start.Value).TotalMinutes, 1.0 / 60000.0);
         var acc = _evaluatedChars == 0 ? 100 : _correctChars * 100.0 / _evaluatedChars;
-        var cpm = _submittedChars / elapsedMinutes;
+        var cpm = Stats.TotalKeystrokes / elapsedMinutes;
         var wpm = _submittedWords / elapsedMinutes;
         return (cpm, wpm, acc);
     }

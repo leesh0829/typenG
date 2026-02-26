@@ -347,6 +347,7 @@ public partial class MainWindow : Window
     {
         var result = new List<Inline>(items.Count + 1);
         var caretIndex = Math.Min(_engine.CurrentInputLength, items.Count);
+        var caretFontSize = Math.Max(14, CurrentLineText.FontSize * 0.72);
 
         for (var i = 0; i < items.Count; i++)
         {
@@ -383,7 +384,7 @@ public partial class MainWindow : Window
 
             if (isCaretPosition && _caretVisible)
             {
-                result.Add(new Run("│") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95), FontWeight = FontWeights.Thin, FontSize = 28 });
+                result.Add(new Run("│") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95), FontWeight = FontWeights.Thin, FontSize = caretFontSize });
             }
 
             result.Add(run);
@@ -395,7 +396,7 @@ public partial class MainWindow : Window
             {
                 Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9),
                 FontWeight = FontWeights.Thin,
-                FontSize = 28
+                FontSize = caretFontSize
             });
         }
 
@@ -410,12 +411,12 @@ public partial class MainWindow : Window
 
     private void AdjustFontSizeToFit(string text)
     {
-        const double maxFont = 42;
+        const double maxFont = 56;
         const double minFont = 10;
 
-        var width = Math.Max(80, ActualWidth - 90);
-        var reservedHeight = IsLongPassage ? 120 : 70;
-        var height = Math.Max(28, ActualHeight - reservedHeight);
+        var width = Math.Max(80, ActualWidth - 34);
+        var chromeHeight = IsLongPassage ? 42 : 18;
+        var height = Math.Max(24, ActualHeight - chromeHeight);
         if (string.IsNullOrEmpty(text))
         {
             CurrentLineText.FontSize = maxFont;
@@ -431,7 +432,10 @@ public partial class MainWindow : Window
         for (var size = maxFont; size >= minFont; size -= 1)
         {
             var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, size, Brushes.Black, dpi);
-            if (formatted.Width <= width && formatted.Height <= height)
+            var upcomingHeight = IsLongPassage ? Math.Max(11, size * 0.56) + 4 : 0;
+            var totalHeight = formatted.Height + upcomingHeight;
+
+            if (formatted.Width <= width && totalHeight <= height)
             {
                 chosen = size;
                 break;
@@ -440,7 +444,23 @@ public partial class MainWindow : Window
 
         CurrentLineText.FontSize = chosen;
         NextLineText.FontSize = chosen;
-        UpcomingLineText.FontSize = Math.Max(14, chosen * 0.62);
+        UpcomingLineText.FontSize = Math.Max(11, chosen * 0.56);
+    }
+
+    private void Window_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!IsLoaded || _isTransitioning)
+        {
+            return;
+        }
+
+        if (_isResultScreen)
+        {
+            RenderResultLine();
+            return;
+        }
+
+        RenderCurrentLine();
     }
 
     private List<Inline> BuildResultInlines(double cpm, double wpm, double acc)

@@ -26,7 +26,12 @@
     </Window.ContextMenu>
 
     <Grid Margin="18" SnapsToDevicePixels="True">
-        <Border CornerRadius="10" Background="#01000000" Padding="20">
+        <Border x:Name="MainFrameBorder"
+                CornerRadius="10"
+                Background="#01000000"
+                Padding="20"
+                BorderBrush="Transparent"
+                BorderThickness="0">
             <Grid ClipToBounds="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -87,18 +92,66 @@
                            Opacity="0.55"
                            Visibility="Collapsed"/>
             
-                <Thumb x:Name="ResizeThumb"
-                       Width="18"
-                       Height="18"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Bottom"
-                       Margin="0,0,4,4"
+                <Thumb x:Name="TopLeftResizeThumb"
+                       Width="16"
+                       Height="16"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Top"
+                       Margin="2"
                        Cursor="SizeNWSE"
                        DragDelta="ResizeThumb_OnDragDelta"
                        Visibility="Collapsed">
                     <Thumb.Template>
                         <ControlTemplate TargetType="Thumb">
-                            <Border Background="#66FFFFFF" CornerRadius="2"/>
+                            <Border Background="#FF111111" CornerRadius="8" BorderBrush="White" BorderThickness="1"/>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
+
+                <Thumb x:Name="TopRightResizeThumb"
+                       Width="16"
+                       Height="16"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Top"
+                       Margin="2"
+                       Cursor="SizeNESW"
+                       DragDelta="ResizeThumb_OnDragDelta"
+                       Visibility="Collapsed">
+                    <Thumb.Template>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border Background="#FF111111" CornerRadius="8" BorderBrush="White" BorderThickness="1"/>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
+
+                <Thumb x:Name="BottomLeftResizeThumb"
+                       Width="16"
+                       Height="16"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Bottom"
+                       Margin="2"
+                       Cursor="SizeNESW"
+                       DragDelta="ResizeThumb_OnDragDelta"
+                       Visibility="Collapsed">
+                    <Thumb.Template>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border Background="#FF111111" CornerRadius="8" BorderBrush="White" BorderThickness="1"/>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
+
+                <Thumb x:Name="BottomRightResizeThumb"
+                       Width="16"
+                       Height="16"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Bottom"
+                       Margin="2"
+                       Cursor="SizeNWSE"
+                       DragDelta="ResizeThumb_OnDragDelta"
+                       Visibility="Collapsed">
+                    <Thumb.Template>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border Background="#FF111111" CornerRadius="8" BorderBrush="White" BorderThickness="1"/>
                         </ControlTemplate>
                     </Thumb.Template>
                 </Thumb>

@@ -569,7 +569,14 @@ public partial class MainWindow : Window
     {
         _isResizeMode = !_isResizeMode;
         ResizeMode = _isResizeMode ? ResizeMode.CanResize : ResizeMode.NoResize;
-        ResizeThumb.Visibility = _isResizeMode ? Visibility.Visible : Visibility.Collapsed;
+        var thumbVisibility = _isResizeMode ? Visibility.Visible : Visibility.Collapsed;
+        TopLeftResizeThumb.Visibility = thumbVisibility;
+        TopRightResizeThumb.Visibility = thumbVisibility;
+        BottomLeftResizeThumb.Visibility = thumbVisibility;
+        BottomRightResizeThumb.Visibility = thumbVisibility;
+
+        MainFrameBorder.BorderThickness = _isResizeMode ? new Thickness(1) : new Thickness(0);
+        MainFrameBorder.BorderBrush = _isResizeMode ? Brushes.Black : Brushes.Transparent;
         ResizeMenuItem.Header = _isResizeMode ? "위치/크기 조정 끝내기" : "위치/크기 조정 시작";
     }
 
@@ -671,7 +678,54 @@ public partial class MainWindow : Window
             return;
         }
 
-        Width = Math.Max(MinWidth > 0 ? MinWidth : 420, Width + e.HorizontalChange);
-        Height = Math.Max(MinHeight > 0 ? MinHeight : 120, Height + e.VerticalChange);
+        var minWidth = MinWidth > 0 ? MinWidth : 420;
+        var minHeight = MinHeight > 0 ? MinHeight : 120;
+        var thumbName = (sender as FrameworkElement)?.Name;
+
+        switch (thumbName)
+        {
+            case nameof(TopLeftResizeThumb):
+                ResizeFromLeft(e.HorizontalChange, minWidth);
+                ResizeFromTop(e.VerticalChange, minHeight);
+                break;
+            case nameof(TopRightResizeThumb):
+                ResizeFromRight(e.HorizontalChange, minWidth);
+                ResizeFromTop(e.VerticalChange, minHeight);
+                break;
+            case nameof(BottomLeftResizeThumb):
+                ResizeFromLeft(e.HorizontalChange, minWidth);
+                ResizeFromBottom(e.VerticalChange, minHeight);
+                break;
+            default:
+                ResizeFromRight(e.HorizontalChange, minWidth);
+                ResizeFromBottom(e.VerticalChange, minHeight);
+                break;
+        }
+    }
+
+    private void ResizeFromRight(double horizontalChange, double minWidth)
+    {
+        Width = Math.Max(minWidth, Width + horizontalChange);
+    }
+
+    private void ResizeFromBottom(double verticalChange, double minHeight)
+    {
+        Height = Math.Max(minHeight, Height + verticalChange);
+    }
+
+    private void ResizeFromLeft(double horizontalChange, double minWidth)
+    {
+        var nextWidth = Math.Max(minWidth, Width - horizontalChange);
+        var widthDelta = nextWidth - Width;
+        Width = nextWidth;
+        Left -= widthDelta;
+    }
+
+    private void ResizeFromTop(double verticalChange, double minHeight)
+    {
+        var nextHeight = Math.Max(minHeight, Height - verticalChange);
+        var heightDelta = nextHeight - Height;
+        Height = nextHeight;
+        Top -= heightDelta;
     }
 }

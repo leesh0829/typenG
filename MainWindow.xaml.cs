@@ -91,9 +91,12 @@ public partial class MainWindow : Window
 
         if (e.Key is Key.Back)
         {
-            _compositionText = string.Empty;
-            _hangulComposer.Reset();
-            _engine.HandleBackspace();
+            if (!_hangulComposer.HandleBackspace())
+            {
+                _engine.HandleBackspace();
+            }
+
+            _compositionText = _hangulComposer.CompositionText;
             RenderCurrentLine();
             e.Handled = true;
             return;
@@ -583,8 +586,12 @@ public partial class MainWindow : Window
         ResizeMode = _isResizeMode ? ResizeMode.CanResize : ResizeMode.NoResize;
         var thumbVisibility = _isResizeMode ? Visibility.Visible : Visibility.Collapsed;
         TopLeftResizeThumb.Visibility = thumbVisibility;
+        TopResizeThumb.Visibility = thumbVisibility;
         TopRightResizeThumb.Visibility = thumbVisibility;
+        LeftResizeThumb.Visibility = thumbVisibility;
+        RightResizeThumb.Visibility = thumbVisibility;
         BottomLeftResizeThumb.Visibility = thumbVisibility;
+        BottomResizeThumb.Visibility = thumbVisibility;
         BottomRightResizeThumb.Visibility = thumbVisibility;
 
         MainFrameBorder.BorderThickness = _isResizeMode ? new Thickness(1) : new Thickness(0);
@@ -704,8 +711,20 @@ public partial class MainWindow : Window
                 ResizeFromRight(e.HorizontalChange, minWidth);
                 ResizeFromTop(e.VerticalChange, minHeight);
                 break;
+            case nameof(TopResizeThumb):
+                ResizeFromTop(e.VerticalChange, minHeight);
+                break;
+            case nameof(LeftResizeThumb):
+                ResizeFromLeft(e.HorizontalChange, minWidth);
+                break;
+            case nameof(RightResizeThumb):
+                ResizeFromRight(e.HorizontalChange, minWidth);
+                break;
             case nameof(BottomLeftResizeThumb):
                 ResizeFromLeft(e.HorizontalChange, minWidth);
+                ResizeFromBottom(e.VerticalChange, minHeight);
+                break;
+            case nameof(BottomResizeThumb):
                 ResizeFromBottom(e.VerticalChange, minHeight);
                 break;
             default:

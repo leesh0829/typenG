@@ -10,6 +10,7 @@
         Width="980"
         Height="180"
         ShowInTaskbar="True"
+        SizeChanged="Window_OnSizeChanged"
         KeyDown="Window_KeyDown"
         PreviewTextInput="Window_PreviewTextInput"
         PreviewMouseLeftButtonDown="Window_PreviewMouseLeftButtonDown"
@@ -87,7 +88,7 @@
                            VerticalAlignment="Bottom"
                            HorizontalAlignment="Center"
                            Margin="0,10,0,0"
-                           TextWrapping="Wrap"
+                           TextWrapping="NoWrap"
                            TextTrimming="CharacterEllipsis"
                            Opacity="0.55"
                            Visibility="Collapsed"/>

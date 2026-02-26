@@ -138,6 +138,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        // 측정 시작 기준: 문장이 표시된 시점이 아니라, 사용자의 첫 실제 입력 시점
+        _engine.EnsureTimingStarted();
+
         if ((e.Text == " " || e.Text == "\r" || e.Text == "\n") && _engine.CanAdvanceLine())
         {
             _compositionText = string.Empty;

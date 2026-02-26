@@ -28,6 +28,12 @@ public sealed class TypingEngine
     public int CurrentInputLength => _inputBuffer.Count;
     public int TotalLineCount => _lines.Count;
     public string NextLine => CurrentLineIndex + 1 < _lines.Count ? _lines[CurrentLineIndex + 1] : string.Empty;
+    public bool HasStarted => _startedAt is not null;
+
+    public void EnsureTimingStarted()
+    {
+        _startedAt ??= DateTimeOffset.Now;
+    }
 
     public void LoadPassage(IEnumerable<string> lines)
     {
@@ -88,7 +94,7 @@ public sealed class TypingEngine
             return false;
         }
 
-        _startedAt ??= DateTimeOffset.Now;
+        EnsureTimingStarted();
         Stats.TotalKeystrokes++;
 
         var idx = _inputBuffer.Count;

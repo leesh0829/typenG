@@ -24,6 +24,12 @@ public sealed class HangulComposer
         ["ㅗㅏ"] = 'ㅘ', ["ㅗㅐ"] = 'ㅙ', ["ㅗㅣ"] = 'ㅚ', ["ㅜㅓ"] = 'ㅝ', ["ㅜㅔ"] = 'ㅞ', ["ㅜㅣ"] = 'ㅟ', ["ㅡㅣ"] = 'ㅢ'
     };
 
+    private static readonly Dictionary<char, (char first, char second)> CompoundVowelSplit = new()
+    {
+        ['ㅘ'] = ('ㅗ', 'ㅏ'), ['ㅙ'] = ('ㅗ', 'ㅐ'), ['ㅚ'] = ('ㅗ', 'ㅣ'),
+        ['ㅝ'] = ('ㅜ', 'ㅓ'), ['ㅞ'] = ('ㅜ', 'ㅔ'), ['ㅟ'] = ('ㅜ', 'ㅣ'), ['ㅢ'] = ('ㅡ', 'ㅣ')
+    };
+
     private static readonly Dictionary<string, char> CompoundFinal = new()
     {
         ["ㄱㅅ"] = 'ㄳ', ["ㄴㅈ"] = 'ㄵ', ["ㄴㅎ"] = 'ㄶ', ["ㄹㄱ"] = 'ㄺ', ["ㄹㅁ"] = 'ㄻ',
@@ -64,6 +70,45 @@ public sealed class HangulComposer
         var current = BuildCurrent();
         Reset();
         return current == '\0' ? string.Empty : current.ToString();
+    }
+
+    public bool HandleBackspace()
+    {
+        if (_choseong is null)
+        {
+            return false;
+        }
+
+        if (_jongseong is not null)
+        {
+            if (FinalSplit.TryGetValue(_jongseong.Value, out var split))
+            {
+                _jongseong = split.first;
+            }
+            else
+            {
+                _jongseong = null;
+            }
+
+            return true;
+        }
+
+        if (_jungseong is not null)
+        {
+            if (CompoundVowelSplit.TryGetValue(_jungseong.Value, out var split))
+            {
+                _jungseong = split.first;
+            }
+            else
+            {
+                _jungseong = null;
+            }
+
+            return true;
+        }
+
+        _choseong = null;
+        return true;
     }
 
     public string ProcessKey(char key)

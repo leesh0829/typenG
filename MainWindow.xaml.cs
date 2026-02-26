@@ -411,12 +411,12 @@ public partial class MainWindow : Window
 
     private void AdjustFontSizeToFit(string text)
     {
-        const double maxFont = 42;
+        const double maxFont = 56;
         const double minFont = 10;
 
-        var width = Math.Max(80, ActualWidth - 90);
-        var chromeHeight = IsLongPassage ? 98 : 70;
-        var height = Math.Max(28, ActualHeight - chromeHeight);
+        var width = Math.Max(80, ActualWidth - 34);
+        var chromeHeight = IsLongPassage ? 42 : 18;
+        var height = Math.Max(24, ActualHeight - chromeHeight);
         if (string.IsNullOrEmpty(text))
         {
             CurrentLineText.FontSize = maxFont;
@@ -432,7 +432,7 @@ public partial class MainWindow : Window
         for (var size = maxFont; size >= minFont; size -= 1)
         {
             var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, size, Brushes.Black, dpi);
-            var upcomingHeight = IsLongPassage ? Math.Max(14, size * 0.62) + 10 : 0;
+            var upcomingHeight = IsLongPassage ? Math.Max(11, size * 0.56) + 4 : 0;
             var totalHeight = formatted.Height + upcomingHeight;
 
             if (formatted.Width <= width && totalHeight <= height)
@@ -444,7 +444,7 @@ public partial class MainWindow : Window
 
         CurrentLineText.FontSize = chosen;
         NextLineText.FontSize = chosen;
-        UpcomingLineText.FontSize = Math.Max(14, chosen * 0.62);
+        UpcomingLineText.FontSize = Math.Max(11, chosen * 0.56);
     }
 
     private void Window_OnSizeChanged(object sender, SizeChangedEventArgs e)

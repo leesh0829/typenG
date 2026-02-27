@@ -260,6 +260,15 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SetPracticeLanguage(PracticeLanguage language)
+    {
+        _passageProvider.SetLanguage(language);
+        MixedLanguageMenuItem.IsChecked = language == PracticeLanguage.Mixed;
+        KoreanLanguageMenuItem.IsChecked = language == PracticeLanguage.Korean;
+        EnglishLanguageMenuItem.IsChecked = language == PracticeLanguage.English;
+        LoadNextPassage(skipAnimation: true);
+    }
+
     private async Task TransitionToNextPassageAsync()
     {
         _engine.LoadPassage(_passageProvider.GetNextPassage());
@@ -583,6 +592,21 @@ public partial class MainWindow : Window
         Storyboard.SetTarget(anim, target);
         Storyboard.SetTargetProperty(anim, new PropertyPath(prop));
         return anim;
+    }
+
+    private void MixedLanguageMenuItem_OnClick(object sender, RoutedEventArgs e)
+    {
+        SetPracticeLanguage(PracticeLanguage.Mixed);
+    }
+
+    private void KoreanLanguageMenuItem_OnClick(object sender, RoutedEventArgs e)
+    {
+        SetPracticeLanguage(PracticeLanguage.Korean);
+    }
+
+    private void EnglishLanguageMenuItem_OnClick(object sender, RoutedEventArgs e)
+    {
+        SetPracticeLanguage(PracticeLanguage.English);
     }
 
     private async void NextPassageMenuItem_OnClick(object sender, RoutedEventArgs e)

@@ -19,6 +19,11 @@
         <ContextMenu x:Name="OverlayContextMenu">
             <MenuItem x:Name="ResizeMenuItem" Header="위치/크기 조정 시작" Click="ResizeMenuItem_OnClick"/>
             <MenuItem Header="다른 문장 하기" Click="NextPassageMenuItem_OnClick"/>
+            <MenuItem Header="연습 언어">
+                <MenuItem x:Name="MixedLanguageMenuItem" Header="한/영 섞기" Click="MixedLanguageMenuItem_OnClick" IsCheckable="True" IsChecked="True"/>
+                <MenuItem x:Name="KoreanLanguageMenuItem" Header="한글만" Click="KoreanLanguageMenuItem_OnClick" IsCheckable="True"/>
+                <MenuItem x:Name="EnglishLanguageMenuItem" Header="영어만" Click="EnglishLanguageMenuItem_OnClick" IsCheckable="True"/>
+            </MenuItem>
             <Separator/>
             <MenuItem x:Name="ForegroundMenuItem" Header="글자 색상: 검정" Click="ForegroundMenuItem_OnClick"/>
             <Separator/>

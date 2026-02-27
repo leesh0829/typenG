@@ -14,6 +14,8 @@ public sealed class PassageProvider
     private int _lastShortIndex = -1;
     private int _lastLongIndex = -1;
 
+    public PracticeLanguage CurrentLanguage { get; private set; } = PracticeLanguage.Mixed;
+
     public PassageProvider()
     {
         var loaded = LoadPassages();
@@ -47,17 +49,31 @@ public sealed class PassageProvider
 
     public string[] GetNextPassage()
     {
+        var shortCandidates = FilterByLanguage(_shortPassages);
+        var longCandidates = FilterByLanguage(_longPassages);
+
+        if (shortCandidates.Count == 0 && longCandidates.Count == 0)
+        {
+            shortCandidates = _shortPassages;
+            longCandidates = _longPassages;
+        }
+
         if (_shortPassages.Count == 0 && _longPassages.Count == 0)
         {
             return ["No passage loaded."];
         }
 
-        var pickLong = _shortPassages.Count == 0
-            || (_longPassages.Count > 0 && _random.NextDouble() >= 0.5);
+        var pickLong = shortCandidates.Count == 0
+            || (longCandidates.Count > 0 && _random.NextDouble() >= 0.5);
 
         return pickLong
-            ? PickRandom(_longPassages, ref _lastLongIndex)
-            : PickRandom(_shortPassages, ref _lastShortIndex);
+            ? PickRandom(longCandidates, ref _lastLongIndex)
+            : PickRandom(shortCandidates, ref _lastShortIndex);
+    }
+
+    public void SetLanguage(PracticeLanguage language)
+    {
+        CurrentLanguage = language;
     }
 
     private string[] PickRandom(List<string[]> items, ref int lastIndex)
@@ -114,10 +130,36 @@ public sealed class PassageProvider
         [
             "짧게 정확하게 치는 연습이 속도의 시작이다.",
             "하루 10분의 반복은 분명한 변화를 만든다.",
+            "Small improvements every day lead to big progress over time.",
+            "Keep your fingers relaxed and let rhythm guide your typing speed.",
             "코드는 읽기 쉬워야 오래 살아남는다. 짧은 함수와 명확한 이름이 버그를 줄인다. 테스트는 두려움을 자신감으로 바꾼다.",
+            "Readable code survives longer than clever code. Clear names and short functions prevent mistakes. Tests turn fear into confidence.",
             "집중은 한 번에 한 가지 일에서 나온다. 알림을 끄고 호흡을 고르면 마음이 정리된다. 작은 완료를 쌓아 큰 목표에 도달하자.",
             "이 문장은 장문 예시다. 시작은 느리지만 정확하게 치는 것이 중요하다. 속도는 정확도가 안정된 다음에 따라온다. 호흡을 일정하게 유지하고 오타를 줄여 보자. 오늘의 연습이 내일의 자신감을 만든다."
         ]);
+    }
+
+    private List<string[]> FilterByLanguage(List<string[]> source)
+    {
+        return CurrentLanguage switch
+        {
+            PracticeLanguage.Korean => source.Where(ContainsHangul).ToList(),
+            PracticeLanguage.English => source.Where(static passage => !ContainsHangul(passage)).ToList(),
+            _ => source
+        };
+    }
+
+    private static bool ContainsHangul(string[] passage)
+    {
+        foreach (var line in passage)
+        {
+            if (line.Any(static c => (c >= '가' && c <= '힣') || (c >= 'ㄱ' && c <= 'ㆎ')))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static List<string[]> NormalizeItems(IEnumerable<string> items)
@@ -163,4 +205,11 @@ public sealed class PassageProvider
 
         return sentences.ToArray();
     }
+}
+
+public enum PracticeLanguage
+{
+    Mixed,
+    Korean,
+    English
 }

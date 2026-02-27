@@ -395,10 +395,9 @@ public partial class MainWindow : Window
             {
                 result.Add(new Run("│")
                 {
-                    Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95),
+                    Foreground = CreateForegroundWithOpacity(_baseBrush, _caretVisible ? 0.95 : 0.0),
                     FontWeight = FontWeights.Thin,
-                    FontSize = caretFontSize,
-                    Opacity = _caretVisible ? 1.0 : 0.0
+                    FontSize = caretFontSize
                 });
             }
 
@@ -409,10 +408,9 @@ public partial class MainWindow : Window
         {
             result.Add(new Run("│")
             {
-                Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9),
+                Foreground = CreateForegroundWithOpacity(_baseBrush, _caretVisible ? 0.9 : 0.0),
                 FontWeight = FontWeights.Thin,
-                FontSize = caretFontSize,
-                Opacity = _caretVisible ? 1.0 : 0.0
+                FontSize = caretFontSize
             });
         }
 

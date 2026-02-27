@@ -391,9 +391,15 @@ public partial class MainWindow : Window
                 Foreground = foreground
             };
 
-            if (isCaretPosition && _caretVisible)
+            if (isCaretPosition)
             {
-                result.Add(new Run("│") { Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95), FontWeight = FontWeights.Thin, FontSize = caretFontSize });
+                result.Add(new Run("│")
+                {
+                    Foreground = CreateForegroundWithOpacity(_baseBrush, 0.95),
+                    FontWeight = FontWeights.Thin,
+                    FontSize = caretFontSize,
+                    Opacity = _caretVisible ? 1.0 : 0.0
+                });
             }
 
             result.Add(run);
@@ -401,11 +407,12 @@ public partial class MainWindow : Window
 
         if (caretIndex >= items.Count)
         {
-            result.Add(new Run(_caretVisible ? "│" : " ")
+            result.Add(new Run("│")
             {
                 Foreground = CreateForegroundWithOpacity(_baseBrush, 0.9),
                 FontWeight = FontWeights.Thin,
-                FontSize = caretFontSize
+                FontSize = caretFontSize,
+                Opacity = _caretVisible ? 1.0 : 0.0
             });
         }
 
